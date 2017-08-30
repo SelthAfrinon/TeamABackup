@@ -1,10 +1,13 @@
-<apex:page showHeader="false" sidebar="false" standardStylesheets="true" standardController="Scorecard__c" id="mainPage" extensions="scorecardTrackerExtensionV2" applyHTmlTag="false">
+<apex:page showHeader="false" sidebar="false" standardStylesheets="true" standardController="Scorecard__c" extensions="scorecardTrackerExtensionV2" id="mainPage"  applyHTmlTag="false">
     <html>
         <head>
             <apex:slds />
         </head>
-        
         <style>
+            body{
+                margin:20px;
+            }
+        
             .scoreholderClass {
                 width:40px;
             }
@@ -17,623 +20,583 @@
                 width: auto;
                 height: auto;
             }
+            td input {
+                margin: 0 auto;
+                text-align: center;
+            }
         </style>
-        
         <body onload="switchMode(true); show(false, false); showAddSkillsModal(false); changeDisplayedRows();" id="mainBody">
-        <div class="slds-scope" id="mainBlock">
-        
-        <apex:form styleClass="slds-form slds-form_stacked" id="main_form">
-        <apex:pageMessages />
-        <div class="slds-page-header">
-          <div class="slds-media">
-            <div class="slds-media__body">
-              <h1 id="title-display" class="slds-page-header__title slds-truncate slds-align-middle" title="{!currentScorecard.Name}">{!currentScorecard.Name}</h1>
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        
-        
-    <!-- TOP: BATCH INFO -->
-    <div class = "slds-section">
-        <h3 class = "slds-section__title">Batch Information</h3>
-        <div class="slds-grid slds-grid_pull-padded-medium" style="width:100%">
-            <div class="slds-col slds-p-horizontal_medium">
-                <div class="slds-form-element">
-                    <label class="slds-form-element__label" for="batchId">Training Batch</label>
-                    <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--right">
-                        <apex:inputField id="batchId" value="{!currentScorecard.TrainingBatch__c}" styleclass="slds-input" html-class="input-field">
-                            <apex:actionSupport event="onchange" action="{!updateTrainingBatch}" />
-                        </apex:inputField>
-                    </div>
-                    <script>
-                        var lkInput = document.getElementById("{!$Component.main_form.batchId}");
-                        var lkSpan = lkInput.parentElement;
-                        var lkLink = lkSpan.querySelector("a");
-                        lkLink.className = "";
-                        lkLink.innerHTML = "<svg aria-hidden=\"true\" class=\"slds-input__icon\"><use xlink:href=\"" + "{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" + "\"></use></svg>";
-                    </script>
-                </div>
-                <div class="slds-form-element">
-                    <label class="slds-form-element__label" for="trainer-output-field">Trainer</label>
-                    <div class="slds-form-element__control">
-                        <apex:outputText id="trainer-output-field" html-class="input-field" styleClass="slds-input" value="{!currentBatch.Trainer__c}"/>
-                    </div>
-                </div>
-            </div>
-            <div class="slds-col slds-p-horizontal_medium">
-                <div class="slds-form-element">
-                    <label class="slds-form-element__label" for="batch-concentration">Training Concentration</label>
-                    <div class="slds-form-element__control">
-                        <apex:outputText id="batch-concentration" html-class="input-field" styleClass="slds-input" value="{!currentBatch.TrainingConcentration__c}"/>
-                    </div>
-                </div>
-                <div class="slds-form-element">
-                    <label class="slds-form-element__label" for="training-location">Training Location</label>
-                        <div class="slds-form-element__control">
-                            <apex:outputText id="training-location" html-class="input-field" styleClass="slds-input" value="{!currentBatch.TrainingLocation__c}"/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- SCORECARD INFO -->
-        <div class = "slds-section">
-        <h3 class = "slds-section__title">Scorecard Information</h3>
-        <div class="slds-grid slds-grid_pull-padded-medium">
-          <div class="slds-col slds-p-horizontal_medium">
-          
-            <div class="slds-form-element">
-              <label class="slds-form-element__label" for="scorecard-name">Scorecard Name</label>
-              <div class="slds-form-element__control">
-                <apex:actionRegion >
-                  <apex:inputField styleClass="slds-input" value="{!currentScorecard.Name}" html-class="input-field" id="scorecard-name">
-                    <apex:actionSupport event="onchange" rerender="main_form" /><!--reRender="title-display"-->
-                  </apex:inputField>
-                </apex:actionRegion>
-              </div>
-            </div>
-            <div class="slds-form-element" id="date">
-              <label class="slds-form-element__label" for="scorecard-desc">Scorecard Description</label>
-              <div class="slds-form-element__control">
-                <apex:inputField value="{!currentScorecard.Description__c}" html-class="input-field" styleClass="slds-textarea" id="scorecard-desc"/>
-              </div>
-            </div>
-            
-          </div>
-          <div class="slds-col slds-p-horizontal_medium">
-          
-            <div class="slds-form-element" id="date">
-              <label class="slds-form-element__label" for="scorecard-date">Scorecard Date</label>
-              <div class="slds-form-element__control">
-                <apex:inputField value="{!currentScorecard.Created_Date__c}" html-class="input-field" styleClass="slds-input" id="scorecard-date" style="width:82%"/>
-              </div>
-            </div>
-          
-          </div>
-        </div>
-                <div style="text-align:center;" id="buttonBlock">
-                    <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="" onclick="" id="editButton" reRender="scoreTableWrapper"/>
-                    <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="" id="exitButton"/>
-                    <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Discard Changes and Exit" action="{!noSaveExit}" id="discardButton" />
-                </div>
-                <apex:actionFunction action="{!saveAllChanges}" name="saveToServer" />
-                <apex:actionFunction action="{!saveAndExit}" name="saveToServerAndExit" />
-                <apex:actionFunction action="{!cancel}" name="cancel" />
-        </div>
-        
-        
-        
-        <!-- SCORES -->
-        <apex:outputPanel id="scoreTableWrapper">
-        <div class = "slds-section">
-        <h3 class = "slds-section__title">Scores</h3>
-        <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Save Score Changes" action="{!saveAllChanges}" reRender="none"/>
-        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
-          <thead>
-            <tr id="skill-name-display" class="slds-text-title_caps">
-              <th scope="col">
-                <div class="slds-truncate" title="Names">Names</div>
-              </th>
-              <!--<td>Names</td>-->
-              <apex:repeat value="{!displayCurrentSkillNames}" var="skill">
-                <th scope="col">
-                  <div class="slds-truncate" title="{!skill}">{!skill}</div>
-                </th>
-                <!--<td>{!skill}</td>-->
-              </apex:repeat>
-              <td id="add-skills-cell">
-                <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add" onclick="showAddSkillsModal(true)" reRender="add-skills-button" id="add-skills-button" /><!--reRender="add-skills-cell"-->
-              </td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr id="scoreholderRow0">
-                            <td>{!TraineeNames[0]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[0]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="slds-input scoreholderClass" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow1">
-                            <td>{!TraineeNames[1]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[1]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow2">
-                            <td>{!TraineeNames[2]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[2]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow3">
-                            <td>{!TraineeNames[3]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[3]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow4">
-                            <td>{!TraineeNames[4]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[4]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow5">
-                            <td>{!TraineeNames[5]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[5]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow6">
-                            <td>{!TraineeNames[6]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[6]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow7">
-                            <td>{!TraineeNames[7]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[7]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow8">
-                            <td>{!TraineeNames[8]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[8]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow9">
-                            <td>{!TraineeNames[9]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[9]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow10">
-                            <td>{!TraineeNames[10]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[10]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow11">
-                            <td>{!TraineeNames[11]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[11]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow12">
-                            <td>{!TraineeNames[12]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[12]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow13">
-                            <td>{!TraineeNames[13]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[13]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow14">
-                            <td>{!TraineeNames[14]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[14]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow15">
-                            <td>{!TraineeNames[15]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[15]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow16">
-                            <td>{!TraineeNames[16]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[16]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow17">
-                            <td>{!TraineeNames[17]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[17]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow18">
-                            <td>{!TraineeNames[18]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[18]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow19">
-                            <td>{!TraineeNames[19]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[19]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow20">
-                            <td>{!TraineeNames[20]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[20]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow21">
-                            <td>{!TraineeNames[21]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[21]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow22">
-                            <td>{!TraineeNames[22]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[22]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow23">
-                            <td>{!TraineeNames[23]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[23]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow24">
-                            <td>{!TraineeNames[24]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[24]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow25">
-                            <td>{!TraineeNames[25]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[25]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow26">
-                            <td>{!TraineeNames[26]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[26]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow27">
-                            <td>{!TraineeNames[27]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[27]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow28">
-                            <td>{!TraineeNames[28]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[28]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-                        <tr id="scoreholderRow29">
-                            <td>{!TraineeNames[29]}</td>
-                            <apex:repeat value="{!displayScoreholderTable[29]}" var="displayScoreholder">
-                                <td>
-                                    <apex:inputField styleClass="scoreholderClass slds-input" value="{!displayScoreholder.Score__c}" />
-                                </td>
-                            </apex:repeat>
-                        </tr>
-          </tbody>
-        </table>
-        </div>
-        </apex:outputPanel>
-        
-        <!--------------------------------------------------------------------------------------------------------------->
-        
-        <section id="add-skills-modal" role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
-                    <div class="slds-modal__container">
-                        <header class="slds-modal__header">
-                            Add Skills       
-                        </header>
-                        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                            <apex:pageMessages id="page-messages"/>    
-                            <div style="text-align:center;">
-                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" action="{!addSkillsToScorecard}" onclick="showAddSkillsModal(false); " value="Add Selected Skills" rerender="scoreTableWrapper, existBlock, newSkillBlock" oncomplete="changeDisplayedRows(); show(false,false);"/>
-                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" onclick="showAddSkillsModal(false); show(false,false); changeDisplayedRows();" value="Cancel Skill Selection" rerender="existBlock, newSkillBlock" oncomplete="show(false,false);"/>
-                            </div>
-                            <!--------------------------------------------------------------------------------------------------------------->
-                            <fieldset class="slds-form-element">
-                              <legend class="slds-form-element__legend slds-form-element__label">Select an Action</legend>
-                              <div class="slds-form-element__control">
-                                <div class="slds-radio_button-group">
-                                  <span class="slds-button slds-radio_button">
-                                    <input type="radio" name="radio" id="monday" value="on" onclick="show(true, false);"/>
-                                    <label class="slds-radio_button__label" for="monday">
-                                      <span class="slds-radio_faux">Add Existing Skills</span>
-                                    </label>
-                                  </span>
-                                  <span class="slds-button slds-radio_button">
-                                    <input type="radio" name="radio" id="tuesday" value="on" onclick="show(false, true);"/>
-                                    <label class="slds-radio_button__label" for="tuesday">
-                                      <span class="slds-radio_faux">Create New Skill</span>
-                                    </label>
-                                  </span>
-                                </div>
-                              </div>
-                            </fieldset>
-                            <br/>
-   
-                            <div>
-                            <apex:outputPanel id="existBlock">
-                                <!--<apex:panelGrid columns="1">-->
-                                <div class="slds-text-body_regular">
-                                  Skills to Add:
-                                </div>
-                                    <apex:repeat value="{!oldSkillsToAdd}" var="stringName">
-                                      <div class="slds-text-body_regular">
-                                        <!--Skill to Add:--> <br/> {!stringName}
-                                        <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="existBlock">
-                                            <apex:param name="skillToRemove" value="{!stringName}" />
-                                            <apex:param name="setToRemoveFrom" value="old" />
-                                            <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin-left: 10px;" value="Remove"/>
-                                        </apex:commandLink>
-                                        <br />
-                                      </div>
-                                        <!--<apex:outputLabel value="Skill to add: "/> <br/> {!stringName}
-                                        <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="existBlock">
-                                            <apex:param name="skillToRemove" value="{!stringName}" />
-                                            <apex:param name="setToRemoveFrom" value="old" />
-                                            <apex:commandButton styleClass="slds-button slds-button_neutral" value="Remove"/>
-                                        </apex:commandLink>
-                                        <br />-->
-                                    </apex:repeat>
-                                    
-                                    <br/>
-                                    
-                                    <!--------------------------------------------------------------------------------------------------------------->
-                                    
-                                    <!--<apex:inputField styleClass="slds-input" style="width:50%" value="{!placeholder.Skill__c}" />-->
-                                    <div class="slds-form-element">
-                                      <!--<label class="slds-form-element__label" for="placeholder_skill">Training Batch:</label>-->
-                                      <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--right">
-                                        <apex:inputField id="placeholder_skill" value="{!placeholder.Skill__c}" styleclass="slds-input"/>
-                                      </div>
-                                      <script>
-                                        var lkInput = document.getElementById("{!$Component.mainPage.main_form.placeholder_skill}");
-                                        var lkSpan = lkInput.parentElement;
-                                        var lkLink = lkSpan.querySelector("a");
-                                        lkLink.className = "";
-                                        lkLink.innerHTML = "<svg aria-hidden=\"true\" class=\"slds-input__icon\"><use xlink:href=\"" + "{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" + "\"></use></svg>";
-                                      </script>
-                                    </div>
-                                    
-                                    <!--------------------------------------------------------------------------------------------------------------->
-                                    <br/>
-                                    <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add Skill" action="{!addOldSkill}" reRender="existBlock, page-messages"/>
-                                <!--</apex:panelGrid>-->
-                            </apex:outputPanel>
-                            </div>
-                                  
-                            <div>
-                                <apex:outputPanel id="newSkillBlock">
-                                    <div id="new-skill-panel">
-                                    <div class="slds-text-body_regular">
-                                      Skills to Add:
-                                    </div>
-                                        <apex:repeat value="{!displayNewSkillsToAdd}" var="stringName">
-                                        <br/> {!stringName}
-                                            <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="newSkillBlock"><!--reRender="newSkillBlock, newskill, new-skill-panel"-->
-                                                <apex:param name="skillToRemove" value="{!stringName}" />
-                                                <apex:param name="setToRemoveFrom" value="new" />
-                                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin-left: 10px;" value="Remove" reRender="newSkillBlock" /><!--rerender="newSkillBlock, newskill, new-skill-panel"-->
-                                            </apex:commandLink>
-                                            <br />
-                                        </apex:repeat>
-                                        <br />
-                                        </div>
-                                        <!--<apex:outputLabel value="Skill to add: "/> {!stringName}
-                                            <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="newSkillBlock">
-                                                <apex:param name="skillToRemove" value="{!stringName}" />
-                                                <apex:param name="setToRemoveFrom" value="new" />
-                                                <apex:commandButton value="Remove" reRender="newSkillBlock" />
-                                            </apex:commandLink>
-                                            <br />
-                                        </apex:repeat>
-                                        <br />-->
-
-                                        <div class="slds-form-element">
-                                          <label class="slds-form-element__label" for="new_skill_name">Skill Name</label>
-                                          <div class="slds-form-element__control">
-                                            <apex:inputField value="{!oneNewSkill.Name}" html-class="input-field" styleClass="slds-input" id="new_skill_name"/>
-                                          </div>
-                                        </div>
-                                        <div class="slds-form-element">
-                                          <label class="slds-form-element__label" for="new_skill_type">Skill Type</label>
-                                          <div class="slds-form-element__control">
-                                            <apex:inputField value="{!oneNewSkill.Skill_Type__c}" html-class="input-field" styleClass="slds-input" id="new_skill_type"/>
-                                          </div>
-                                        </div>
-                                        <div class="slds-form-element">
-                                          <label class="slds-form-element__label" for="new_skill_max">Skill Max</label>
-                                          <div class="slds-form-element__control">
-                                            <apex:inputField value="{!oneNewSkill.Max_value__c}" html-class="input-field" styleClass="slds-input" id="new_skill_max"/>
-                                          </div>
-                                        </div>
-                                       <!--Lami
-                                       <apex:outputText value="Enter new skill name: " />
-                                       <apex:inputField value="{!oneNewSKill.Name}" />
-                                       <apex:outputLabel value="Skill Type:" /><apex:inputField value="{!oneNewSkill.Skill_Type__c}"/>
-                                       <apex:outputLabel value="Max Score" /><apex:inputField value="{!oneNewSkill.Max_value__c}"/>
-                                       <apex:outputLabel value="Description:" /><apex:inputField value="{!oneNewSkill.Description__c}" />
-                                       Lami-->
-                                       <br/>
-                                       <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add Skill" action="{!addNewSkill}" reRender="newSkillBlock, page-messages"/><!--reRender="newSkillBlock, messages, page-messages"-->
-                                    <!--</div>-->
+                    <div class="slds-scope" id="mainBlock">
+                        <apex:form styleClass="slds-form slds-form_stacked" id="main_form">
+                            <apex:pageMessages />
+                            <div class="slds-page-header slds-media slds-media__body slds-page-header__title slds-truncate slds-align-middle">
+                                <apex:outputPanel id="title-display">
+                                    <h1 id="title-display" title="{!currentScorecard.Name}">{!currentScorecard.Name}</h1>
                                 </apex:outputPanel>
                             </div>
-                    </div>
-                </div>
-            </section>
-            <div id="modal-backdrop" class="slds-backdrop slds-backdrop_open"></div>
-        <!--------------------------------------------------------------------------------------------------------------------->
-        </apex:form>
-        </div>
-        <script type="text/javascript">
-            var batch;
-            
-            
-            
-            function checkForBatchId(){
-                if(document.getElementById('{!$Component.main_form.batchId}').hasChildNodes()){
-                    batch = document.getElementById('{!$Component.main_form.batchId}').firstChild.innerHTML;
-                }else{
-                    batch = document.getElementById('{!$Component.main_form.batchId}').value;
-                }
-            }
-            
-            function saveChanges(){
-                checkForBatchId();
-                if(batch){
-                    saveToServer();
-                    switchMode(true);
-                }else{
-                    alert('Please select a training batch before saving.');
-                }
-            }
-            
-            function validateSaveAndExit(){
-                checkForBatchId();
-                if(batch){
-                    saveToServerAndExit();
-                    switchMode(true);
-                }else{
-                    alert('Please select a training batch before saving.');
-                }
-            }
-            
-            function showAddSkillsModal(showModal){
-                if(showModal==true){
-                    checkForBatchId();
-                    if(batch){
-                        document.getElementById('add-skills-modal').style.display='inline';
-                        document.getElementById('modal-backdrop').style.display='inline';
-                    }else{
-                        alert('Please select a training batch before adding skills.');
-                    }
-                }else if(showModal == false){
-                    document.getElementById('add-skills-modal').style.display='none';
-                    document.getElementById('modal-backdrop').style.display='none';
-                }
-            }
-            
-            function show(showexistBlock, shownewskillBlock) {
-                //document.getElementById('existBlock').style.display = showexistBlock ? 'block' : 'none';
-                //document.getElementById('newSkillBlock').style.display = shownewskillBlock ? 'block' : 'none';
-                document.getElementById('{!$Component.main_form.existBlock}').style.display = showexistBlock ? 'block' : 'none';
-                document.getElementById('{!$Component.main_form.newSkillBlock}').style.display = shownewskillBlock ? 'block' : 'none';
-            }
-            
-            function changeDisplayedRows(){
-                var numberTrainees = '{!numbTrainees}';
-                var idString;
-                for(i = numberTrainees; i < 30; i++){
-                    idString = 'scoreholderRow' + i;
-                    document.getElementById(idString).style.display='none';
-                }
-            }
+                            <div style="text-align:center;" id="buttonBlock">
+                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Edit Card" onclick="switchMode(false);" reRender="none" id="editButton"/>
+                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Save All Changes" onclick="saveChanges();" id="saveButton" reRender="scoreTableWrapper"/>
+                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Save Changes and Exit" onclick="validateSaveAndExit();" id="saveAndExitButton" reRender="scoreTableWrapper"/>
+                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Exit" action="{!noSaveExit}" id="exitButton" />
+                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" value="Discard Changes and Exit" action="{!noSaveExit}" id="discardButton" />
+                            </div>
+                            <apex:actionFunction action="{!saveAllChanges}" name="saveToServer" />
+                            <apex:actionFunction action="{!saveAndExit}" name="saveToServerAndExit" />
+
+                            <!-- TOP: BATCH INFO -->
+                            <div class = "slds-section">
+                                    <h3 class = "slds-section__title">Batch Information</h3>
+                                    <div class="slds-grid slds-grid_pull-padded-medium">
+                                            <div class="slds-col slds-p-horizontal_medium" style="width:12.5%">
+                                                    <div class="slds-form-element">
+                                                            <label class="slds-form-element__label" for="batchId">Training Batch</label>
+                                                            <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--right">
+                                                                    <apex:inputField id="batchId" value="{!currentScorecard.TrainingBatch__c}" styleclass="slds-input" html-class="input-field">
+                                                                            <apex:actionSupport event="onchange" action="{!updateTrainingBatch}" />
+                                                                    </apex:inputField>
+                                                            </div>
+                                                            <script>
+                                                                var lkInput = document.getElementById("{!$Component.main_form.batchId}");
+                                                                var lkSpan = lkInput.parentElement;
+                                                                var lkLink = lkSpan.querySelector("a");
+                                                                lkLink.className = "";
+                                                                lkLink.innerHTML = "<svg aria-hidden=\"true\" class=\"slds-input__icon\"><use xlink:href=\"" + "{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" + "\"></use></svg>";
+                                                                lkLink.style.visibility = "hidden";
+                                                                function setVisibilityOfBatchLookup(canSee) {
+                                                                    var lkInput2 = document.getElementById("{!$Component.main_form.batchId}");
+                                                                    var lkSpan2 = lkInput2.parentElement;
+                                                                    var lkLink2 = lkSpan2.querySelector("a");
+                                                                    lkLink2.style.visibility = canSee ? "visible" : "hidden";
+                                                                }
+                                                            </script>
+                                                    </div>
+                                                    <div class="slds-form-element">
+                                                            <label class="slds-form-element__label" for="trainer-output-field">Trainer</label>
+                                                            <div class="slds-form-element__control">
+                                                                    <apex:outputText id="trainer-output-field" html-class="input-field" styleClass="slds-input iJustNeedThisToWork" value="{!currentBatch.Trainer__c}"/>
+                                                            </div>
+                                                    </div>
+                                            </div>
+                                            <div class="slds-col slds-p-horizontal_medium">
+                                                    <div class="slds-form-element">
+                                                            <label class="slds-form-element__label" for="batch-concentration">Training Concentration</label>
+                                                            <div class="slds-form-element__control">
+                                                                    <apex:outputText id="batch-concentration" html-class="input-field" styleClass="slds-input iJustNeedThisToWork" value="{!currentBatch.TrainingConcentration__c}"/>
+                                                            </div>
+                                                    </div>
+                                                    <div class="slds-form-element">
+                                                            <label class="slds-form-element__label" for="training-location">Training Location</label>
+                                                                    <div class="slds-form-element__control">
+                                                                            <apex:outputText id="training-location" html-class="input-field" styleClass="slds-input iJustNeedThisToWork" value="{!currentBatch.TrainingLocation__c}"/>
+                                                                    </div>
+                                                            </div>
+                                                    </div>
+                                            </div>
+                                    </div>
+                                    <!-- SCORECARD INFO -->
+                                    <div class = "slds-section">
+                                    <h3 class = "slds-section__title">Scorecard Information</h3>
+                                    <div class="slds-grid slds-grid_pull-padded-medium">
+                                        <div class="slds-col slds-p-horizontal_medium" style="width:18.5%">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label" for="scorecard-name">Scorecard Name</label>
+                                                <div class="slds-form-element__control">
+                                                    <apex:actionRegion >
+                                                        <apex:inputField styleClass="slds-input" value="{!currentScorecard.Name}" html-class="input-field" id="scorecard-name">
+                                                            <apex:actionSupport event="onchange" rerender="title-display" /><!--reRender="title-display"-->
+                                                        </apex:inputField>
+                                                    </apex:actionRegion>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element" id="date">
+                                                <label class="slds-form-element__label" for="scorecard-desc">Scorecard Description</label>
+                                                <div class="slds-form-element__control">
+                                                    <apex:inputField value="{!currentScorecard.Description__c}" html-class="input-field" styleClass="slds-textarea" id="scorecard-desc"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-col slds-p-horizontal_medium">
+                                            <div class="slds-form-element" id="date">
+                                                <label class="slds-form-element__label" for="scorecard-date">Scorecard Date</label>
+                                                <div class="slds-form-element__control">
+                                                    <apex:inputField value="{!currentScorecard.Created_Date__c}" html-class="input-field" styleClass="slds-input" id="scorecard-date" style="width:86%"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>  
+                                </div>
+
+                                <!-- SCORES -->
+                                <apex:outputPanel id="scoreTableWrapper">
+                                    <div class = "slds-section">
+                                        <h3 class = "slds-section__title">Scores</h3>
+                                        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                                            <thead>
+                                                <tr id="skill-name-display" class="slds-text-title_caps">
+                                                    <th scope="col">
+                                                        <div class="slds-truncate" title="Names">Names</div>
+                                                    </th>
+                                                    <!--<td>Names</td>-->
+                                                    <apex:repeat value="{!displayCurrentSkillNames}" var="skill">
+                                                        <th scope="col">
+                                                            <div class="slds-truncate" title="{!skill}">{!skill}</div>
+                                                        </th>
+                                                        <!--<td>{!skill}</td>-->
+                                                    </apex:repeat>
+                                                    <th id="add-skills-cell">
+                                                        <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add" onclick="showAddSkillsModal(true)" reRender="add-skills-button" id="add-skills-button" /><!--reRender="add-skills-cell"-->
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr id="scoreholderRow0">
+                                                    <td>{!TraineeNames[0]}</td>
+                                                    <apex:repeat value="{!displayScoreholderTable[0]}" var="displayScoreholder">
+                                                            <td>
+                                                                    <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                            </td>
+                                                    </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow1">
+                                                        <td>{!TraineeNames[1]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[1]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow2">
+                                                        <td>{!TraineeNames[2]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[2]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow3">
+                                                        <td>{!TraineeNames[3]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[3]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow4">
+                                                        <td>{!TraineeNames[4]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[4]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow5">
+                                                        <td>{!TraineeNames[5]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[5]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow6">
+                                                        <td>{!TraineeNames[6]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[6]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow7">
+                                                        <td>{!TraineeNames[7]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[7]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow8">
+                                                        <td>{!TraineeNames[8]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[8]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow9">
+                                                        <td>{!TraineeNames[9]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[9]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow10">
+                                                        <td>{!TraineeNames[10]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[10]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow11">
+                                                        <td>{!TraineeNames[11]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[11]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow12">
+                                                        <td>{!TraineeNames[12]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[12]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow13">
+                                                        <td>{!TraineeNames[13]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[13]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow14">
+                                                        <td>{!TraineeNames[14]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[14]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow15">
+                                                        <td>{!TraineeNames[15]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[15]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow16">
+                                                        <td>{!TraineeNames[16]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[16]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow17">
+                                                        <td>{!TraineeNames[17]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[17]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow18">
+                                                        <td>{!TraineeNames[18]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[18]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow19">
+                                                        <td>{!TraineeNames[19]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[19]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow20">
+                                                        <td>{!TraineeNames[20]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[20]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow21">
+                                                        <td>{!TraineeNames[21]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[21]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow22">
+                                                        <td>{!TraineeNames[22]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[22]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow23">
+                                                        <td>{!TraineeNames[23]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[23]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow24">
+                                                        <td>{!TraineeNames[24]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[24]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow25">
+                                                        <td>{!TraineeNames[25]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[25]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow26">
+                                                        <td>{!TraineeNames[26]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[26]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow27">
+                                                        <td>{!TraineeNames[27]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[27]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow28">
+                                                        <td>{!TraineeNames[28]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[28]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                                <tr id="scoreholderRow29">
+                                                        <td>{!TraineeNames[29]}</td>
+                                                        <apex:repeat value="{!displayScoreholderTable[29]}" var="displayScoreholder">
+                                                                <td>
+                                                                        <apex:inputField styleClass="slds-input scoreholderClass" html-class="input-field" value="{!displayScoreholder.Score__c}" />
+                                                                </td>
+                                                        </apex:repeat>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </apex:outputPanel>
         
-            function switchMode(isDisabled){
-                var inputs = document.getElementsByClassName('input-field');
-                for(var i = 0; i < inputs.length; i++) {
-                    inputs[i].disabled = isDisabled;
-                }
-                if(isDisabled == true){
-                    document.getElementById('{!$Component.main_form.editButton}').setAttribute('value','Edit Card');
-                    document.getElementById('{!$Component.main_form.editButton}').setAttribute('onclick','switchMode(false)');
-                    document.getElementById('{!$Component.main_form.exitButton}').setAttribute('value','Exit');
-                    document.getElementById('{!$Component.main_form.exitButton}').setAttribute('onclick','cancel(); return false;');
-                    document.getElementById('add-skills-cell').style.display='none';
-                    document.getElementById('{!$Component.main_form.discardButton}').style.display='none';
-                }else{
-                    document.getElementById('{!$Component.main_form.editButton}').setAttribute('value','Save All Changes');
-                    document.getElementById('{!$Component.main_form.editButton}').setAttribute('onclick','saveChanges(); return false;');
-                    document.getElementById('{!$Component.main_form.exitButton}').setAttribute('value','Save And Exit');
-                    document.getElementById('{!$Component.main_form.exitButton}').setAttribute('onclick','validateSaveAndExit(); return false');
-                    document.getElementById('add-skills-cell').style.display='';
-                    document.getElementById('{!$Component.main_form.discardButton}').style.display='inline';
-                }
-            }
-        </script>
-        
-        
-        
+                        <!------------------------------------Add Skills Modal Top--------------------------------------------------->
+                                <section id="add-skills-modal" role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                                    <div class="slds-modal__container">
+                                        <header class="slds-modal__header">
+                                                Add Skills       
+                                        </header>
+                                        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                                            <apex:pageMessages id="page-messages"/>    
+                                            <div style="text-align:center;">
+                                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" action="{!addSkillsToScorecard}" onclick="showAddSkillsModal(false); " value="Add Selected Skills" rerender="scoreTableWrapper, existBlock, newSkillBlock" oncomplete="changeDisplayedRows(); show(false,false);"/>
+                                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin: 10px 5px 10px 5px;" onclick="showAddSkillsModal(false); show(false,false); changeDisplayedRows();" value="Cancel Skill Selection" rerender="existBlock, newSkillBlock" oncomplete="show(false,false);"/>
+                                            </div>
+                        <!------------------------------------Add Skills Modal Body-------------------------------------------------->
+                                            <fieldset class="slds-form-element">
+                                                <legend class="slds-form-element__legend slds-form-element__label">Select an Action</legend>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-radio_button-group">
+                                                        <span class="slds-button slds-radio_button">
+                                                            <input type="radio" name="radio" id="monday" value="on" onclick="show(true, false);"/>
+                                                            <label class="slds-radio_button__label" for="monday">
+                                                                <span class="slds-radio_faux">Add Existing Skills</span>
+                                                            </label>
+                                                        </span>
+                                                        <span class="slds-button slds-radio_button">
+                                                            <input type="radio" name="radio" id="tuesday" value="on" onclick="show(false, true);"/>
+                                                            <label class="slds-radio_button__label" for="tuesday">
+                                                                <span class="slds-radio_faux">Create New Skill</span>
+                                                            </label>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            <br/>
+                        <!------------------------------------Add Skills Modal Exist Block-------------------------------------------------->
+                                            <div>
+                                                <apex:outputPanel id="existBlock">
+                                                    <div class="slds-text-body_regular">
+                                                        Skills to Add:
+                                                    </div>
+                                                    <apex:repeat value="{!oldSkillsToAdd}" var="stringName">
+                                                        <div class="slds-text-body_regular">
+                                                            <br/> {!stringName}
+                                                            <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="existBlock">
+                                                                <apex:param name="skillToRemove" value="{!stringName}" />
+                                                                <apex:param name="setToRemoveFrom" value="old" />
+                                                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin-left: 10px;" value="Remove"/>
+                                                            </apex:commandLink>
+                                                            <br />
+                                                        </div>
+                                                    </apex:repeat>
+                                                    <br/>
+                        <!------------------------------------Add Skills Modal Exist Add Section-------------------------------------------------->
+                                                    <div class="slds-form-element">
+                                                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--right">
+                                                            <apex:inputField id="placeholder_skill" value="{!placeholder.Skill__c}" styleclass="slds-input"/>
+                                                        </div>
+                                                        <script>
+                                                            var lkInput = document.getElementById("{!$Component.mainPage.main_form.placeholder_skill}");
+                                                            var lkSpan = lkInput.parentElement;
+                                                            var lkLink = lkSpan.querySelector("a");
+                                                            lkLink.className = "";
+                                                            lkLink.innerHTML = "<svg aria-hidden=\"true\" class=\"slds-input__icon\"><use xlink:href=\"" + "{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" + "\"></use></svg>";
+                                                        </script>
+                                                    </div>
+                                                    <br/>
+                                                    <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add Skill" action="{!addOldSkill}" reRender="existBlock, page-messages"/>
+                                                </apex:outputPanel>
+                                            </div>
+                        <!------------------------------------Add Skills Modal New Skill Block-------------------------------------------------->
+                                            <div>
+                                                <apex:outputPanel id="newSkillBlock">
+                                                    <div id="new-skill-panel">
+                                                        <div class="slds-text-body_regular">
+                                                            Skills to Add:
+                                                        </div>
+                                                        <apex:repeat value="{!displayNewSkillsToAdd}" var="stringName">
+                                                        <br/> {!stringName}
+                                                            <apex:commandLink action="{!removeSkillFromSkillsPage}" reRender="newSkillBlock"><!--reRender="newSkillBlock, newskill, new-skill-panel"-->
+                                                                <apex:param name="skillToRemove" value="{!stringName}" />
+                                                                <apex:param name="setToRemoveFrom" value="new" />
+                                                                <apex:commandButton styleClass="slds-button slds-button_neutral" style="margin-left: 10px;" value="Remove" reRender="newSkillBlock" /><!--rerender="newSkillBlock, newskill, new-skill-panel"-->
+                                                            </apex:commandLink>
+                                                            <br />
+                                                        </apex:repeat>
+                                                        <br />
+                                                    </div>
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="new_skill_name">Skill Name</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:inputField value="{!oneNewSkill.Name}" html-class="input-field" styleClass="slds-input" id="new_skill_name"/>
+                                                        </div>
+                                                    <!--</div>
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="new_skill_type">Skill Type</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:inputField value="{!oneNewSkill.Skill_Type__c}" html-class="input-field" styleClass="slds-input" id="new_skill_type"/>
+                                                        </div>-->
+                                                    </div>
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="new_skill_max">Skill Max</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:inputField value="{!oneNewSkill.Max_value__c}" html-class="input-field" styleClass="slds-input" id="new_skill_max"/>
+                                                        </div>
+                                                    </div>
+                                                     <br/>
+                                                     <apex:commandButton styleClass="slds-button slds-button_neutral" value="Add Skill" action="{!addNewSkill}" reRender="newSkillBlock, page-messages"/><!--reRender="newSkillBlock, messages, page-messages"-->
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                    <div id="modal-backdrop" class="slds-backdrop slds-backdrop_open"></div>
+                                <!--------------------------------------------------------------------------------------------------------------------->
+                                </apex:form>
+                            </div>
+                            <script type="text/javascript">
+                                var batch;
+                                function checkForBatchId(){
+                                    if(document.getElementById('{!$Component.main_form.batchId}').hasChildNodes()){
+                                            batch = document.getElementById('{!$Component.main_form.batchId}').firstChild.innerHTML;
+                                    }else{
+                                            batch = document.getElementById('{!$Component.main_form.batchId}').value;
+                                    }
+                                }
+                                
+                                function saveChanges(){
+                                    checkForBatchId();
+                                    if(batch){
+                                        saveToServer();
+                                        switchMode(true);
+                                    }else{
+                                        alert('Please select a training batch before saving.');
+                                    }
+                                }
+                                
+                                function validateSaveAndExit(){
+                                    checkForBatchId();
+                                    if(batch){
+                                        saveToServerAndExit();
+                                        switchMode(true);
+                                    }else{
+                                        alert('Please select a training batch before saving.');
+                                    }
+                                }
+                                
+                                function showAddSkillsModal(showModal){
+                                    if(showModal==true){
+                                        checkForBatchId();
+                                        if(batch){
+                                            document.getElementById('add-skills-modal').style.display='inline';
+                                            document.getElementById('modal-backdrop').style.display='inline';
+                                        }else{
+                                            alert('Please select a training batch before adding skills.');
+                                        }
+                                    }else if(showModal == false){
+                                        document.getElementById('add-skills-modal').style.display='none';
+                                        document.getElementById('modal-backdrop').style.display='none';
+                                    }
+                                }
+                                
+                                function show(showexistBlock, shownewskillBlock) {
+                                    document.getElementById('{!$Component.main_form.existBlock}').style.display = showexistBlock ? 'block' : 'none';
+                                    document.getElementById('{!$Component.main_form.newSkillBlock}').style.display = shownewskillBlock ? 'block' : 'none';
+                                }
+                                
+                                function changeDisplayedRows(){
+                                    var numberTrainees = '{!numbTrainees}';
+                                    var idString;
+                                    for(i = numberTrainees; i < 30; i++){
+                                        idString = 'scoreholderRow' + i;
+                                        document.getElementById(idString).style.display='none';
+                                    }
+                                }
+                        
+                                function switchMode(isDisabled){
+                                    setVisibilityOfBatchLookup(!isDisabled);
+                                    var plsWorkForMe = document.getElementsByClassName('iJustNeedThisToWork');
+                                    for (var i = 0; i < plsWorkForMe.length; ++i) {
+                                        //plsWorkForMe[i].style.backgroundColor = isDisabled ? '#e0e5ee' : '#fff';
+                                        //plsWorkForMe[i].style.borderColor = isDisabled ? '#a8b7c7' : '#d8dde6';
+                                        plsWorkForMe[i].style.backgroundColor = '#e0e5ee';
+                                        plsWorkForMe[i].style.borderColor = '#a8b7c7';
+                                    }
+                                    var inputs = document.getElementsByClassName('input-field');
+                                    for(var i = 0; i < inputs.length; i++) {
+                                        inputs[i].disabled = isDisabled;
+                                    }
+                                    if(isDisabled == true){
+                                        document.getElementById('{!$Component.main_form.editButton}').style.display='';
+                                        document.getElementById('{!$Component.main_form.exitButton}').style.display='';
+                                        
+                                        document.getElementById('{!$Component.main_form.discardButton}').style.display='none';
+                                        document.getElementById('add-skills-cell').style.display='none';
+                                    }else{
+                                        document.getElementById('{!$Component.main_form.editButton}').style.display='none';
+                                        document.getElementById('{!$Component.main_form.exitButton}').style.display='none';
+                                        
+                                        document.getElementById('{!$Component.main_form.discardButton}').style.display='';
+                                        document.getElementById('add-skills-cell').style.display='';
+                                    }
+                                }
+                        </script>
         </body>
-    </html>
+    </html> 
 </apex:page>
