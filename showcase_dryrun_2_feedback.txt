@@ -1,0 +1,18 @@
+- Apex is similar to Java, not Javascript.
+- Visualforce should be put on technologies slide.
+- Development model was Agile only, not waterfall.
+- Change Out-of-the-box solutions vs. Custom Solutions to Customizations vs. development
+	- apex goes down in development
+	
+- Add all junction objects to Database schema
+- Figure out why the contacts are not adding correctly to a training batch
+- Fix more dereference errors
+- Remove references on UI to skill types
+- explain what a govoner limit is when talking about limitations
+
+- Add to future iterations section:
+	- add more skill-types for trainers to choose from.
+	
+- Reword requirements - sell "product" better.
+	- State the problem we're trying to solve with our Dynamic scorecard app.
+		- "There is no way to record scores from interviews, one-on-ones, etc."

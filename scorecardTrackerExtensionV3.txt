@@ -1,0 +1,389 @@
+public with sharing class scorecardTrackerExtensionV3 {
+    // display items
+    public List<String> displayCurrentSkillNames {get;set;}
+    public List<String> traineeNames {get;set;}
+    public List<List<Scoreholder__c>> displayScoreholderTable {get;set;}
+      
+    public Scorecard__c currentScorecard{get;set;}
+    public TrainingBatch__c currentBatch{get;set;}
+    public String itemToRemove{get;set;}
+    public Integer numbTrainees{get;set;}
+    
+    public SkillPlaceholder__c placeholder{get;set;}
+    public Skill__c oneNewSkill{get;set;}
+    public Set<String> displayOldSkillsToAddNames{get;set;}
+    public Set<String> displayNewSkillsToAddNames{get;set;}
+    public Set<Skill__c> oldSkillsToAdd{get;set;}
+    public Set<Skill__c> newSkillsToAdd{get;set;}
+    
+    private Id batchId;
+    private Id currentScorecardId;
+    private string prefixScorecard;
+    private string prefixBatch;
+
+    private Set<Skill__c> addedSkills;
+    private Map<Id, ScorecardSkill__c> allScorecardSkillsById;
+    private Map<String, ScorecardSkill__c> allScorecardSkillsBySkillName;
+    private Map<Id, Skill__c> allSkillsById;
+    private Map<String, Skill__c> allSkillsByName;
+    private Map<Id, ContactBatch__c> traineesById;
+    private Map<String, ContactBatch__c>traineesByName;
+    private List<ScoreHolder__c> existingScoreholders;
+    private Set<ScoreHolder__c> setCurrentScoreholders;
+    private Map<String, Map<String, Scoreholder__c>> scoreholderTraineeSkills;
+    
+    public scorecardTrackerExtensionV3(ApexPages.StandardController stdController){
+        // Record bus initialization
+        allScorecardSkillsById = new Map<Id, ScorecardSkill__c>();
+        allScorecardSkillsBySkillName = new Map<String, ScorecardSkill__c>();
+        
+        allSkillsById = new Map<Id, Skill__c>();
+        allSkillsByName = new Map<String, Skill__c>();
+        
+        traineesById = new Map<Id, ContactBatch__c>();
+        traineesByName = new Map<String, ContactBatch__c>();
+        
+        existingScoreholders = new List<Scoreholder__c>();
+        setCurrentScoreholders = new Set<ScoreHolder__c>();
+        
+        // Validation Stuff initialization
+        scoreholderTraineeSkills = new Map<String, Map<String, Scoreholder__c>>();
+        
+        // Add Skills Initialization
+        oneNewSkill = new Skill__c();
+        placeholder = new SkillPlaceholder__c();
+        oldSkillsToAdd = new Set<Skill__c>();
+        newSkillsToAdd = new Set<Skill__c>();
+        displayOldSkillsToAddNames = new Set<String>();
+        displayNewSkillsToAddNames = new Set<String>();
+        
+        // Get prefixes for objects
+        prefixScorecard = schema.getGlobalDescribe().get('Scorecard__c').getDescribe().getKeyPrefix();
+        prefixBatch = schema.getGlobalDescribe().get('TrainingBatch__c').getDescribe().getKeyPrefix();
+        
+        // Setup for new card or existing card
+        stdController.addFields(new List<string>{'TrainingBatch__c', 'Id', 'Trainer__c', 'Name', 'Description__c', 'Created_Date__c'});
+        currentScorecard = (Scorecard__c)stdController.getRecord();
+        System.Debug('Current Scorecard: ' + currentScorecard);
+        if(currentScorecard.TrainingBatch__c != NULL){
+            currentScorecardId = currentScorecard.Id;
+            batchId = currentScorecard.TrainingBatch__c;
+            updateTrainingBatch();
+            
+            // Get ScorecardSkill objects
+            allScorecardSkillsById = new Map<Id, ScorecardSkill__c>([SELECT SkillName__r.Name, Id, Scorecard__c FROM ScorecardSkill__c WHERE Scorecard__r.Id = :currentScorecardId]);
+            
+            for(ScorecardSkill__c currentScorecardSkill:allScorecardSkillsById.values()){
+                allScorecardSkillsBySkillName.put(currentScorecardSkill.SkillName__r.Name, currentScorecardSkill);
+            }
+            
+            existingScoreholders = [SELECT Score__c, ScorecardSkill__r.SKillName__r.Name,
+                                        ContactBatch__r.Id, ContactBatch__r.TraineeName__r.Name, Temp_Skill_Name__c, Temp_Trainee_Name__c
+                                        FROM ScoreHolder__c WHERE ScorecardSkill__r.Scorecard__r.Id = :currentScorecardId];
+            
+            if(!existingScoreholders.isEmpty()){
+                    String traineeName;
+                    setCurrentScoreholders = new Set<ScoreHolder__c>(existingScoreholders);
+                    for(Scoreholder__c currentScoreholder:existingScoreholders){
+                        traineeName = currentScoreholder.ContactBatch__r.TraineeName__r.Name;
+                        if(!scoreholderTraineeSkills.keyset().contains(traineeName)){
+                            scoreholderTraineeSkills.put(traineeName, new Map<String, Scoreholder__c>());
+                            scoreholderTraineeSkills.get(traineeName).put(currentScoreholder.ScorecardSkill__r.SkillName__r.Name, currentScoreholder);
+                        }else{
+                            if(!scoreholderTraineeSkills.get(traineeName).keyset().contains(currentScoreholder.ScorecardSkill__r.SkillName__r.Name)){
+                                scoreholderTraineeSkills.get(traineeName).put(currentScoreholder.ScorecardSkill__r.SkillName__r.Name, currentScoreholder);
+                            }
+                        }
+                    }
+                if(existingScoreholders.size() != allScorecardSkillsById.size()*traineesById.size()){
+                    
+                    for(String currentName:traineesByName.keyset()){
+                        if(!scoreholderTraineeSkills.keyset().contains(currentName)){
+                            for(Scorecardskill__c currentScorecardSkill:allScorecardSkillsById.values()){
+                                setCurrentScoreholders.add(new Scoreholder__c(ContactBatch__c = traineesByName.get(currentName).Id,
+                                                                                ContactBatch__r = traineesByName.get(currentName),
+                                                                                ScorecardSkill__r = currentScorecardSkill
+                                                                                ));
+                            }
+                        }else{
+                            for(Scorecardskill__c currentScorecardSkill:allScorecardSkillsById.values()){
+                                if(!scoreholderTraineeSkills.get(currentName).keyset().contains(currentScorecardSkill.SkillName__r.Name)){
+                                    setCurrentScoreholders.add(new Scoreholder__c(ContactBatch__c = traineesByName.get(currentName).Id,
+                                                                                ContactBatch__r = traineesByName.get(currentName),
+                                                                                ScorecardSkill__r = currentScorecardSkill
+                                                                                ));
+                                }
+                            }
+                        }
+                    }
+                }
+                for(Scoreholder__c l:setCurrentScoreholders){
+                    System.debug('Scoreholders: ' + l);
+                }
+                updateScoreholderDisplay(setCurrentScoreholders);
+            }
+            
+        }else if(ApexPages.currentPage().getParameters().get('retURL') != NULL && ApexPages.currentPage().getParameters().get('retURL').containsIgnoreCase(prefixBatch)){
+            batchId = ApexPages.currentPage().getParameters().get('retURL').remove('/');
+            currentScorecard = new Scorecard__c(Name = 'New Scorecard', TrainingBatch__c = batchId);
+            updateTrainingBatch();
+        }else{
+            currentScorecard = new Scorecard__c(Name='New Scorecard');
+            numbTrainees = 0;
+        }
+        // Get all existing skills
+        
+        allSkillsById = new map<Id, Skill__c> ([SELECT Id, Name FROM Skill__c]);
+        
+        allSkillsByName = new Map<String, Skill__c>();
+        if(allSkillsById != NULL){
+            for(Skill__c currentSkill:allSkillsById.values()){
+                allSkillsByName.put(currentSkill.Name.Capitalize(), currentSkill);
+            }
+        }
+    }
+    
+    // Only called after initialization and when training batch is changed.
+    public void updateTrainingBatch(){
+        currentBatch = [SELECT Id, TrainingConcentration__c, Trainer__c, TrainingLocation__c FROM TrainingBatch__c WHERE Id = :currentScorecard.TrainingBatch__c LIMIT 1];
+        if(currentScorecard.Trainer__c == NULL){
+            currentScorecard.Trainer__c = currentBatch.Trainer__c;
+        }
+        batchId = currentBatch.Id;
+        
+        traineesById = new Map<Id, ContactBatch__c>([SELECT TraineeName__r.Name, TraineeName__c
+                                                    FROM ContactBatch__c WHERE TrainingBatch__c = :currentScorecard.TrainingBatch__c]);
+                                                
+        numbTrainees = traineesById.size();
+        System.Debug('Loaded Trainees: ' + traineesById.values());
+        traineesByName = new Map<String, ContactBatch__c>();
+        if(traineesById != NULL){
+            for(ContactBatch__c currentContactBatch:traineesById.values()){
+                traineesByName.put(currentContactBatch.TraineeName__r.Name, currentContactBatch);
+            }
+        }
+        traineeNames=new List<String>(traineesByName.keyset());
+        traineeNames.sort();
+        // disgusting workaround prt. 1
+        while(traineeNames.size() < 50){
+            traineeNames.add('placeholder');
+        }
+    }
+    
+    // updates scorecard display table
+    private void updateScoreholderDisplay(Set<ScoreHolder__c> setInputScoreholders){
+        displayScoreholderTable = new List<List<Scoreholder__c>>();
+        Set<String> currentSkillNames = new Set<String>();
+        for(ScoreHolder__c currentScoreholder:setInputScoreholders){
+            currentSkillNames.add(currentScoreholder.ScorecardSkill__r.SkillName__r.Name.Capitalize());
+        }
+        displayCurrentSkillNames = new List<String>(currentSkillNames);
+        displayCurrentSkillNames.sort();
+        
+        displayScoreholderTable = new List<List<Scoreholder__c>>();
+        String scoreholderName;
+        Integer i, j;
+        for(ScoreHolder__c currentScoreholder:setInputScoreholders){
+            scoreholderName = currentScoreholder.ContactBatch__r.TraineeName__r.Name;
+            i = 0;
+            j = 0;
+            for(String trainee:traineeNames){
+                if(scoreholderName == trainee){
+                    for(String skill:displayCurrentSkillNames){
+                        if(currentScoreholder.Temp_Skill_Name__c == NULL){
+                            currentScoreholder.Temp_Skill_Name__c = '';
+                        }
+                        if(currentScoreholder.ScorecardSkill__r.SkillName__r.Name != NULL && currentScoreholder.ScorecardSkill__r.SkillName__r.Name.equalsIgnoreCase(skill)){
+                            while(displayScoreholderTable.size() < i + 1){
+                                displayScoreholderTable.add(new List<ScoreHolder__c>());
+                            }
+                            while(displayScoreholderTable.get(i).size() < j + 1){
+                                displayScoreholderTable.get(i).add(NULL);
+                            }
+                            displayScoreholderTable.get(i).set(j, currentScoreholder);
+                        }
+                        j++;
+                    }
+                }
+                i++;
+            }
+        }
+        // Disgusting workaround prt. 2
+        for(Integer k = displayScoreholderTable.size(); k < 50; k++){
+            displayScoreholderTable.add(new List<Scoreholder__c> ());
+            while(displayScoreholderTable[k].size() < displayCurrentSkillNames.size()){
+                displayScoreholderTable[k].add(NULL);
+            }
+        }
+    }
+    
+    // adds existing skill to scorecard display
+    public void addOldSkill(){
+        if(placeholder.Skill__c == NULL){
+            ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'You have not selected a skill to add.'));
+        }else{
+            Boolean f = false;
+            Boolean b = false;
+            for(ScorecardSkill__c a:allScorecardSkillsBySkillName.values()){
+                if(a.SkillName__r.Name == allSkillsById.get(placeholder.Skill__c).Name){
+                    b = true;
+                    break;
+                }
+            }
+            
+            for(Skill__c s:oldSkillsToAdd){
+                if(s.Name.equalsIgnoreCase(allSkillsById.get(placeholder.Skill__c).Name)){
+                    f = true;
+                    break;
+                }
+            }
+            if(f || b){
+                ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'The skill you are trying to add is already linked.'));
+            }else{
+                oldSkillsToAdd.add(allSkillsById.get(placeholder.Skill__c));
+                displayOldSkillsToAddNames.add(allSkillsById.get(placeholder.Skill__c).Name);
+            }
+            placeholder.Skill__c = NULL;
+        }
+    }
+    
+    // adds new skill to scorecard display
+    public void addNewSkill(){
+        if(oneNewSkill.Name == NULL){
+            ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'Please enter a name for the new skill.'));
+        }else if(allSkillsByName.keyset().contains(oneNewSkill.Name.Capitalize())){
+            ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'The skill you are trying to add already exists. Please check the existing skills section.'));
+        }else{
+            Boolean f = false;
+            for(Skill__c s:newSkillsToAdd){
+                if(s.Name.equalsIgnoreCase(oneNewSkill.Name)){
+                    f = true;
+                    break;
+                }
+            }
+            if(f){
+                ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'The skill you are trying to add is already linked.'));
+            }else{
+                newSkillsToAdd.add(oneNewSkill);
+                displayNewSkillsToAddNames.add(oneNewSkill.Name);
+            }
+            oneNewSkill = new Skill__c();
+        }
+    }
+    
+    public pageReference addSkillsToScorecard(){
+        addedSkills = new Set<Skill__c>(oldSkillsToAdd);
+        addedSkills.addAll(newSkillsToAdd);
+        for(Skill__c currentSkill:addedSkills){
+            allScorecardSkillsBySkillName.put(currentSkill.Name, new ScorecardSkill__c(SkillName__r = currentSkill,
+                                                                                        Scorecard__c = currentScorecard.Id,
+                                                                                        Scorecard__r = currentScorecard
+                                                                                        ));
+            for(ContactBatch__c currentTrainee:traineesById.values()){
+                setCurrentScoreholders.add(new Scoreholder__c(
+                                            ContactBatch__r = currentTrainee,
+                                            ContactBatch__c = currentTrainee.Id,
+                                            ScorecardSkill__r = allScorecardSkillsbySkillName.get(currentSkill.Name)            
+                                            ));
+            }
+        }
+        updateScoreholderDisplay(setCurrentScoreholders);
+        oldSkillsToAdd.clear();
+        displayNewSkillsToAddNames.clear();
+        displayOldSkillsToAddNames.clear();
+        return NULL;
+    }
+    
+    public void removeSkillFromSkillsPage(){
+        String itemToRemove = ApexPages.currentPage().getParameters().get('skillToRemove');
+        String setToRemoveFrom = ApexPages.currentPage().getParameters().get('setToRemoveFrom');
+        if(setToRemoveFrom.containsIgnoreCase('old')){
+            displayOldSkillsToAddNames.remove(itemToRemove);
+            for(Skill__c removeSkill:oldSkillsToAdd){
+                if(removeSkill.Name == itemToRemove){
+                    oldSkillsToAdd.remove(removeSkill);
+                    
+                    break;
+                }
+            }
+            
+            
+        }else if(setToRemoveFrom.containsIgnoreCase('new')){
+            displayNewSkillsToAddNames.remove(itemToRemove);
+            for(Skill__c removeSkill:newSkillsToAdd){
+                if(removeSkill.Name == itemToRemove){
+                    newSkillsToAdd.remove(removeSkill);
+                    
+                    break;
+                }
+            }
+        }
+    }
+    
+    public void saveAllChanges(){
+        // Insert new Scorecard if necessary
+        upsert currentScorecard;
+        currentScorecardId = currentScorecard.Id;
+        
+        // Insert new skills
+        List<Skill__c> upSkills = new List<Skill__c>(addedSkills);
+        upsert upSkills;
+        
+        allSkillsById.putAll(upSkills);
+        for(Skill__c currentSkill:upSkills){
+            allSkillsByName.put(currentSkill.Name.Capitalize(), currentSkill);
+        }
+        
+        // Insert new ScorecardSkills
+        for(ScorecardSkill__c currentScorecardSkill:allScorecardSkillsBySkillName.values()){
+            if(currentScorecardSkill.SkillName__c == NULL){
+                currentScorecardSkill.SkillName__c = allSkillsByName.get(currentScorecardSkill.SkillName__r.Name).Id;
+            }
+            
+            if(currentScorecardSkill.Scorecard__c == NULL){
+                currentScorecardSkill.Scorecard__c = currentScorecard.Id;
+            }
+        }
+        List<ScorecardSkill__c> upSSkills = new List<ScorecardSkill__c>(allScorecardSkillsBySkillName.values());
+        upsert upSSkills;
+        allScorecardSkillsById.putAll(upSSkills);
+        
+        // Insert New Scoreholders
+        if(displayScoreholderTable != NULL){
+            List<Scoreholder__c> allScoreholders = new List<Scoreholder__c>();
+            // compensation for disgusting workaround
+            for(Integer i = 0; i < numbTrainees; i++){
+                
+                allScoreholders.addAll(displayScoreholderTable[i]);
+            }
+            for(Scoreholder__c currentScoreholder:allScoreholders){
+                if(currentScoreholder.ScorecardSkill__c == NULL){
+                    currentScoreholder.ScorecardSkill__c = currentScoreholder.ScorecardSkill__r.Id;
+                }
+                
+            }
+            
+            System.Debug('All Scoreholders: ' + allScoreholders);
+            try{
+                upsert allScoreholders;
+            }catch(Exception e){
+                ApexPages.addMessage(new ApexPages.message(ApexPages.severity.error, 'You are attempting to enter a score which is greater than the skill\'s maximum value. Please review your score changes and try again.'));
+            }
+        }
+    }
+    
+    // PageReference functions
+    public PageReference saveAndExit(){
+        saveAllChanges();
+        return noSaveExit();
+    }
+    
+    public PageReference noSaveExit(){
+        if(batchId != NULL){
+            return new PageReference('/' + batchId);
+        }else{
+            return new PageReference('/' + prefixScorecard + '/o');
+        }
+        
+    }
+}

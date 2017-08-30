@@ -1,0 +1,55 @@
+Presentation Flow
+	- Introductions
+		- Mateusz leads
+		
+	- Powerpoint
+		- Mateusz
+		- Mini-Schema/ UI mockup
+			- Lami
+			
+	- Demo - Create Scorecard from scratch
+		- Directions:
+			- App -> Scorecard Tab -> New
+		- UI Discussion
+			- Josh
+		- Directions:
+			- Edit Card -> Select Batch TB #000252 -> Save all Changes
+			
+			- Edit Card -> Scorename: One-on-one #4, Scorecard Date: 08/07/2017, Description: For fourth one-on-one -> saveAllChanges
+			
+			- Edit Card -> Add -> Add Existing skill ->
+				- Look up -> Administrative skill -> add Skill -> 
+				- look up -> Visualforce Knowledge -> add Skill ->
+				- look up -> apex Knowledge -> add Skill -> Add Selected Skills
+				
+			- change scores to numeric values -> Save all Changes -> save and Exit.
+			
+	- Demo - View existing scorecard and add new skill
+		- Directions:
+			- Starting on TB #000252
+			
+			- Open One-on-one #4
+			
+			- Edit card -> add -> Add new Skill -> Skill Name: SOQL, Skill Type: Grade Type, Max: 10 -> add Skill -> Add Selected Skills
+			
+			- Add numerical values to new skill cols -> save and Exit
+			
+	- Demo - Create Scorecard from Training Batch
+		- Starting on TB # 000252
+		
+		- Directions
+			- Scroll to scorecard list -> click New Scorecard
+			
+			- Show off scorecard with batch filled in
+			
+			- Edit button -> scorecard Name: LMS 3 -> Date: 08/14/2017 -> Description: For LMS #3 -> Save and Exit
+	
+	- Show Training Batch Chart 
+		- Starting On TB #000252
+		- Lami
+	- Show Trainee Chart
+		- On Josh Ward Contact
+		- Lami
+	- Powerpoint: limitations and future stuff
+		- Mateusz
+	- Questions
